@@ -7,22 +7,15 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // Define pin connections
 const int trigPin = 9;        // Ultrasonic sensor Trigger pin
 const int echoPin = 8;        // Ultrasonic sensor Echo pin
-const int detectionDistance = 60;  // Detection range in cm
+const int detectionDistance = 100;  // Detection range in cm
 
 // Compliments list (shortened to save memory)
 const char* compliments[] = {
-    "You are almost photogenic in low lighting",
-    "You are bright like a black hole",
-    "Are you a meme? Because I laugh at you, not with you",
-    "Did you wake up like that or was it a choice?",
-    "If looks could kill, you'd only mildly injure",
-    "You have that unique look... only a mirror can appreciate",
-    "I would say you're stylish, but I might actually crack",
-    "If outfits could talk, yours would probably apologize",
-    "You look like you spent hours... maybe try less",
-    "You look like a background character in your own life",
-    "Simply a disappointment!" ,
-    "fuck you!!"};
+    "Looking sharp!", "Nice to see you!", "You're amazing!", 
+    "Keep smiling!", "You're a gem!", "Cool style!", 
+    "Stay awesome!", "Be yourself!", "Rock on!", 
+    "Top-notch!", "Always shining!", "Simply great!"
+};
 
 // Variables
 int complimentIndex = -1; // -1 indicates no compliment displayed
@@ -34,20 +27,14 @@ void setup() {
     Serial.begin(9600);        // Start Serial Monitor
     lcd.init();                // Initialize LCD
     lcd.backlight();           // Turn on the LCD backlight
-    delay(100);                // Delay to allow LCD to initialize
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Mirror Mirror");
-
-    // Configure ultrasonic sensor pins
-    pinMode(trigPin, OUTPUT);
-    pinMode(echoPin, INPUT);
 }
 
 void loop() {
     // Measure distance from ultrasonic sensor
     long distance = measureDistance();
-    Serial.println(distance);
 
     // Check if a person is in range
     if (distance < detectionDistance) {
@@ -93,7 +80,7 @@ void displayScrollingText(const char* text) {
             lcd.clear();
             lcd.setCursor(0, 0);
             lcd.print(text + i);
-            delay(200); // Adjust scroll speed as needed
+            delay(300); // Adjust scroll speed as needed
         }
     } else {
         // If text is short, display it without scrolling

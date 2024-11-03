@@ -7,52 +7,61 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // Define pin connections
 const int trigPin = 9;        // Ultrasonic sensor Trigger pin
 const int echoPin = 8;        // Ultrasonic sensor Echo pin
-const int detectionDistance = 100;  // Distance threshold in cm for detecting presence
+const int detectionDistance = 60;  // Detection range in cm
 
-// Compliment list
-const char* compliments[50] = {
-    "You're amazing!", "Looking great!", "You're unstoppable!", 
-    "You're a genius!", "You shine bright!", "Awesome style!", 
-    "You got this!", "Simply the best!", "You inspire others!", 
-    "Keep it up!", "You're so talented!", "Wow, just wow!", 
-    "You are enough!", "Breathtaking!", "Simply radiant!", 
-    "Superb attitude!", "You rock!", "Impressive!", 
-    "A true gem!", "You look fantastic!", "Never stop dreaming!", 
-    "You're so unique!", "Keep shining!", "Fabulous!", 
-    "Marvelous mind!", "Radiant smile!", "Such charm!", 
-    "Purely brilliant!", "Unstoppable!", "Incredible!", 
-    "You're courageous!", "Stand tall!", "Exceptional!", 
-    "Amazing energy!", "You’re so cool!", "Magnificent!", 
-    "What a star!", "Radiating positivity!", "You are loved!", 
-    "True inspiration!", "Remarkable!", "Bright mind!", 
-    "Epic presence!", "You're terrific!", "Superb confidence!", 
-    "So charismatic!", "Simply gorgeous!", "Extraordinary!", 
-    "Always be you!", "Wonderful person!"
+// Compliments list (shortened to save memory)
+const char* compliments[] = {
+    "You are almost photogenic in low lighting",
+    "You are bright like a black hole",
+    "Are you a meme? Because I laugh at you, not with you",
+    "Did you wake up like that or was it a choice?",
+    "If looks could kill, you'd only mildly injure",
+    "You have that unique look... only a mirror can appreciate",
+    "I would say you're stylish, but I might actually crack",
+    "If outfits could talk, yours would probably apologize",
+    "You look like you spent hours... maybe try less",
+    "You look like a background character in your own life",
+    "Simply a disappointment!",
+    "I'm just a reflection of you!" 
 };
 
-// Variables for compliment display
+// Variables
 int complimentIndex = -1; // -1 indicates no compliment displayed
 bool personDetected = false;
+unsigned long lastDisplayTime = 0;
+const unsigned long displayInterval = 3000;  // Delay to hold compliment (3 seconds)
+const unsigned long resetInterval = 5000;   // 5 seconds to reset to "Mirror Mirror"
 
 void setup() {
-    Serial.begin(9600);        // Start Serial Monitor for debugging
-    lcd.init();                // Initialize the LCD
+    Serial.begin(9600);        // Start Serial Monitor
+    lcd.init();                // Initialize LCD
     lcd.backlight();           // Turn on the LCD backlight
+    delay(100);                // Delay to allow LCD to initialize
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Mirror Mirror");
+    delay(1);
+
+    // Seed the random number generator
+    randomSeed(analogRead(A0));
+
+    // Configure ultrasonic sensor pins
+    pinMode(trigPin, OUTPUT);
+    pinMode(echoPin, INPUT);
 }
 
 void loop() {
     // Measure distance from ultrasonic sensor
     long distance = measureDistance();
+    Serial.println(distance);
 
     // Check if a person is in range
     if (distance < detectionDistance) {
         if (!personDetected) {  // Only trigger if a person was not previously detected
             personDetected = true;
-            complimentIndex = random(0, 50);  // Select a random compliment
-            displayCompliment(compliments[complimentIndex]); // Display compliment
+            complimentIndex = random(0, sizeof(compliments) / sizeof(compliments[0])); // Select a random compliment
+            displayScrollingText(compliments[complimentIndex]); // Display compliment with scrolling
+            lastDisplayTime = millis();
         }
     } else {
         // Reset when person leaves range
@@ -61,6 +70,13 @@ void loop() {
             lcd.clear();
             lcd.setCursor(0, 0);
             lcd.print("Awaiting...");
+            lastDisplayTime = millis(); // Reset timer for "Awaiting..." state
+        } else if (millis() - lastDisplayTime > resetInterval) {
+            // After 10 seconds in "Awaiting..." state, go back to "Mirror Mirror"
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("Mirror Mirror");
+            delay(1000); // Small delay to avoid rapid changes
         }
     }
 
@@ -80,9 +96,22 @@ long measureDistance() {
     return distance;
 }
 
-// Function to display a compliment on the LCD
-void displayCompliment(const char* compliment) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print(compliment); // Display compliment on LCD
+// Function to display a scrolling compliment on the LCD
+void displayScrollingText(const char* text) {
+    int textLength = strlen(text);
+    
+    // Scroll text if it’s longer than 16 characters
+    if (textLength > 16) {
+        for (int i = 0; i < textLength - 15; i++) {
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print(text + i);
+            delay(200); // Adjust scroll speed as needed
+        }
+    } else {
+        // If text is short, display it without scrolling
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print(text);
+    }
 }
